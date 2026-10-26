@@ -20,7 +20,7 @@ export function createApp(options: AppOptions = {}) {
   const secret = options.sessionSecret ?? process.env.SESSION_SECRET ?? 'local-development-secret-change-me';
   const adminPassword = options.adminPassword ?? process.env.ADMIN_PASSWORD ?? '';
   const apiKey = options.closeRouterApiKey ?? process.env.CLOSEROUTER_API_KEY ?? '';
-  const model = options.model ?? process.env.CLOSEROUTER_MODEL ?? 'anthropic/claude-opus-4.8';
+  const model = options.model ?? process.env.CLOSEROUTER_MODEL ?? 'anthropic/claude-sonnet-5.5';
   const production = options.production ?? process.env.NODE_ENV === 'production';
   if (production && (!adminPassword || !(options.sessionSecret || process.env.SESSION_SECRET))) throw new Error('В production необходимо задать ADMIN_PASSWORD и SESSION_SECRET');
   fs.mkdirSync(path.dirname(dbPath), { recursive: true }); fs.mkdirSync(uploadDir, { recursive: true });

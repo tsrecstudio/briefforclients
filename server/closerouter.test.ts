@@ -22,7 +22,7 @@ test('brief generation calls CloseRouter chat completions with the configured mo
       { title: 'Сколько пользователей будет работать?', type: 'text', impact: 'Нагрузка' },
     ] }) } }] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }) as typeof fetch;
-  const { app, db } = createApp({ dbPath: path.join(dir, 'test.sqlite'), uploadDir: path.join(dir, 'uploads'), adminPassword: 'admin', sessionSecret: 'secret', closeRouterApiKey: 'closerouter_test_key', model: 'anthropic/claude-opus-4.8' });
+  const { app, db } = createApp({ dbPath: path.join(dir, 'test.sqlite'), uploadDir: path.join(dir, 'uploads'), adminPassword: 'admin', sessionSecret: 'secret', closeRouterApiKey: 'closerouter_test_key', model: 'anthropic/claude-sonnet-5.5' });
   try {
     const login = await request(app).post('/api/admin/login').send({ password: 'admin' });
     const cookie = login.headers['set-cookie'][0].split(';')[0];
@@ -30,7 +30,7 @@ test('brief generation calls CloseRouter chat completions with the configured mo
     assert.equal(created.status, 201);
     assert.equal(calledUrl, 'https://api.closerouter.dev/v1/chat/completions');
     assert.equal(authorization, 'Bearer closerouter_test_key');
-    assert.equal(requestBody.model, 'anthropic/claude-opus-4.8');
+    assert.equal(requestBody.model, 'anthropic/claude-sonnet-5.5');
     assert.equal(created.body.aiConfigured, true);
     assert.equal(created.body.fallback, false);
     assert.equal(created.body.questionCount, 3);
