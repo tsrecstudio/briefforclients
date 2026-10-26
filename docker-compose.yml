@@ -1,0 +1,21 @@
+services:
+  briefforclients:
+    build: .
+    container_name: mcdis-client-brief
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: 4000
+      DB_PATH: /data/briefs.sqlite
+      UPLOAD_DIR: /data/uploads
+      COOKIE_SECURE: "true"
+    volumes:
+      - ./data:/data
+    ports:
+      - "4000:4000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:4000/api/admin/me').then(r=>process.exit(r.status===401?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
