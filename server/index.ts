@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express, { type Request, type Response, type NextFunction } from 'express';
 import { DatabaseSync } from 'node:sqlite';
 import multer from 'multer';
@@ -9,7 +10,7 @@ import { fallbackQuestions, hash, makeId, normalizeQuestions, parseModelQuestion
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(here, '..');
-type AppOptions = { dbPath?: string; uploadDir?: string; adminPassword?: string; sessionSecret?: string; deepseekApiKey?: string; model?: string; production?: boolean };
+type AppOptions = { dbPath?: string; uploadDir?: string; adminPassword?: string; sessionSecret?: string; closeRouterApiKey?: string; model?: string; production?: boolean };
 
 function safeJson<T>(value: string, fallback: T): T { try { return JSON.parse(value) as T; } catch { return fallback; } }
 export function createApp(options: AppOptions = {}) {
@@ -18,8 +19,8 @@ export function createApp(options: AppOptions = {}) {
   const uploadDir = options.uploadDir ?? process.env.UPLOAD_DIR ?? path.join(ROOT, 'data', 'uploads');
   const secret = options.sessionSecret ?? process.env.SESSION_SECRET ?? 'local-development-secret-change-me';
   const adminPassword = options.adminPassword ?? process.env.ADMIN_PASSWORD ?? '';
-  const apiKey = options.deepseekApiKey ?? process.env.DEEPSEEK_API_KEY ?? '';
-  const model = options.model ?? process.env.DEEPSEEK_MODEL ?? 'deepseek-flash';
+  const apiKey = options.closeRouterApiKey ?? process.env.CLOSEROUTER_API_KEY ?? '';
+  const model = options.model ?? process.env.CLOSEROUTER_MODEL ?? 'anthropic/claude-opus-4.8';
   const production = options.production ?? process.env.NODE_ENV === 'production';
   if (production && (!adminPassword || !(options.sessionSecret || process.env.SESSION_SECRET))) throw new Error('В production необходимо задать ADMIN_PASSWORD и SESSION_SECRET');
   fs.mkdirSync(path.dirname(dbPath), { recursive: true }); fs.mkdirSync(uploadDir, { recursive: true });
@@ -80,18 +81,18 @@ export function createApp(options: AppOptions = {}) {
     let questions = fallbackQuestions; let usedModel = 'Встроенный шаблон';
     if (apiKey) {
       try {
-        const response = await fetch('https://api.deepseek.com/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` }, body: JSON.stringify({
-          model, stream: false, response_format: { type: 'json_object' }, thinking: { type: 'enabled' }, reasoning_effort: 'high', max_tokens: 6000,
+        const response = await fetch('https://api.closerouter.dev/v1/chat/completions', { method: 'POST', signal: AbortSignal.timeout(90_000), headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` }, body: JSON.stringify({
+          model, stream: false, max_tokens: 6000,
           messages: [
             { role: 'system', content: 'Ты — ведущий бизнес-аналитик и архитектор заказной разработки МСДИС. Составь на русском языке персональный клиентский бриф. Верни только JSON object вида {"questions":[...]}. Никаких вводных и заключений. 7–12 вопросов, не более 14. Спрашивай только то, что реально влияет на границы решения, архитектуру, интеграции, инфраструктуру, данные, безопасность, UX/оборудование, нефункциональные требования, миграцию или план запуска. Учитывай сведения из запроса, не спрашивай повторно то, что уже известно. Вопрос должен быть одним конкретным и дружелюбным, без жаргона, без обязательности и без вопросов о бюджете/сроках/контактах/маркетинговых целях. Тип выбирай один из: text, textarea, single, multi, scale, file, yesno. Для single/multi добавляй 3–6 коротких options с реальными альтернативами, включая «Пока не знаем» когда уместно. Для scale пиши options из 1..5. Для остальных типов options не нужны. У каждого вопроса поля title, help (короткое пояснение), type, options, impact (архитектурное решение, на которое ответ влияет). Вопросы должны быть естественными и не дублировать друг друга. Не делай вопрос обязательным.' },
             { role: 'user', content: JSON.stringify(intake) }
           ]
         }) });
-        if (!response.ok) throw new Error(`DeepSeek API: ${response.status}`);
+        if (!response.ok) throw new Error(`CloseRouter API: ${response.status}`);
         const data: any = await response.json();
         questions = normalizeQuestions(parseModelQuestions(data.choices?.[0]?.message?.content ?? ''));
         usedModel = model;
-      } catch (error) { console.error('DeepSeek generation failed; using fallback:', error); }
+      } catch (error) { console.error('CloseRouter generation failed; using fallback:', error); }
     }
     const id = makeId(12); const token = makeId(32); const now = new Date().toISOString();
     db.prepare('INSERT INTO briefs (id, token_hash, company, contact, email, website, industry, description, request, known, questions, created_at, updated_at, model) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)')

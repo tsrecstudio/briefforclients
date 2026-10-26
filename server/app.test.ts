@@ -8,7 +8,7 @@ import { createApp } from './index.js';
 
 test('admin creates a private client link; client can save and resume optional answers', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcdis-test-'));
-  const { app, db } = createApp({ dbPath: path.join(dir, 'test.sqlite'), uploadDir: path.join(dir, 'uploads'), adminPassword: 'test-secret', sessionSecret: 'test-session-secret' });
+  const { app, db } = createApp({ dbPath: path.join(dir, 'test.sqlite'), uploadDir: path.join(dir, 'uploads'), adminPassword: 'test-secret', sessionSecret: 'test-session-secret', closeRouterApiKey: '' });
   try {
     const unauth = await request(app).get('/api/admin/briefs');
     assert.equal(unauth.status, 401);
@@ -43,7 +43,7 @@ test('admin creates a private client link; client can save and resume optional a
 
 test('client can mark a brief complete and upload a permitted attachment', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcdis-files-'));
-  const { app, db } = createApp({ dbPath: path.join(dir, 'test.sqlite'), uploadDir: path.join(dir, 'uploads'), adminPassword: 'admin', sessionSecret: 'secret' });
+  const { app, db } = createApp({ dbPath: path.join(dir, 'test.sqlite'), uploadDir: path.join(dir, 'uploads'), adminPassword: 'admin', sessionSecret: 'secret', closeRouterApiKey: '' });
   try {
     const login = await request(app).post('/api/admin/login').send({ password: 'admin' });
     const cookie = login.headers['set-cookie'][0].split(';')[0];

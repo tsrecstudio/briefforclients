@@ -13,6 +13,7 @@
     "typecheck": "tsc -b --pretty"
   },
   "dependencies": {
+    "dotenv": "^18.0.9",
     "express": "^5.1.0",
     "lucide-react": "^0.468.0",
     "multer": "^2.0.2",
